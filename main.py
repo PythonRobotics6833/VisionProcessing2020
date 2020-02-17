@@ -4,13 +4,22 @@ import sys
 import logging
 import time
 from networktables import NetworkTables
+import math as math
 
+'''
+r = math.tan(39)
+r2 = math.atan(39)
+print("tan: ")
+print(r)
+print("arctan: ")
+print(r2)
+'''
 
 vid = cv2.VideoCapture(1)
 
 
 logging.basicConfig(level=logging.DEBUG)
-minpixels = 200
+minpixels = 50
 minpixels_cube = 800
 
 # while not NetworkTables.isConnected():
@@ -21,11 +30,14 @@ minpixels_cube = 800
 #vtargetobj = NetworkTables.getTable("vtargetobj")
 #cubetarget = NetworkTables.getTable("cubetarget")
 counter=0
+counter2 = 0
 while (True):
 
     #if statustable.getEntry('powerstatus').getBoolean(True) == False:
     #    break
     ret, frame = vid.read()
+    #print("FOV Width")
+    #print(frame.shape[1])
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # covert to hsv space
     gBlurImg = cv2.GaussianBlur(hsv, (9, 9), 1.7)  # gaussian blur for noise reduction
@@ -34,7 +46,7 @@ while (True):
     cv2.imshow("Frame", frame)
     #print(gBlurImg[0,0])
     cv2.waitKey(1)
-    print("hello")
+    #print("hello")
     lower_green = np.array([30, 100, 100])
     upper_green =   np.array([65, 230, 200])
 
@@ -71,8 +83,13 @@ while (True):
 
     # cube detection
 
-    lower_yellow = np.array([18, 150, 50])
-    upper_yellow = np.array([26, 255, 255])
+#old values
+#    lower_yellow = np.array([18, 150, 50])
+#    upper_yellow = np.array([26, 255, 255])
+#new values
+    lower_yellow = np.array([20, 120, 40])
+    upper_yellow = np.array([40, 255, 255])
+
 
 
     mask_yellow = cv2.inRange(gBlurImg, lower_yellow, upper_yellow)
@@ -103,10 +120,50 @@ while (True):
                     pixels = w * h - cv2.countNonZero(roi)
                     cubelistpixels.append(pixels)
                     powerCells= np.vstack([x,y,w,h])
+                    #print(powerCells)
                     cv2.rectangle(res_yellow, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
+                    
+                    ballWidth = w
+                    #print("ballWidth")
+                    #print(ballWidth)
+
+
+                    theta = 0.528
+                    #print("theta")
+                    #print(theta)
+
+
+                    pixFromCenter=(x -(640/2)+(w/2))
+                    #print("pixFromCenter")
+                    #print(pixFromCenter)
+
+                    distance = (0.58*640)/(2*ballWidth*(math.tan(theta)))
+                    #print("distance")
+                    print(distance)
+
+
+                    centerDelta = (2*distance*(math.tan(theta))*(pixFromCenter))/640
+                    #print("centerDelta")
+                    #print(centerDelta)
+
+                    
+                    angleToBall = math.atan(centerDelta/distance)
+                    #print("angleToBall")
+                    #counter2+=1
+                    #if(counter2 > 500):
+                    print(angleToBall*180/3.14159)
+                        #counter2 = 0
+
+                    print(" ")
+        
+                    
+
+
+
+
     cv2.imshow('cubes', res_yellow)
-    print(powerCells[:][:])
+    #print(powerCells[:][:])
     #cubetarget.putNumber('objcount', len(cubelistx))
     #cubetarget.putNumberArray('cubelistpixels', cubelistpixels)
     #cubetarget.putNumberArray('cubetargetx', cubelistx)
@@ -114,14 +171,15 @@ while (True):
     #cubetarget.putNumberArray('cubetargetw', cubelistw)
     #cubetarget.putNumberArray('cubetargeth', cubelisth)
 
-    counter+=1
-    if counter >5:
+    #counter+=1
+    if counter >1:
+        print("break")
         break
 
 
 #statustable2 = NetworkTables.getTable("status")
 #statustable2.putBoolean('booted', False)
 
-print("break")
-vid.release()
-cv2.destroyAllWindows()
+    #print("break")
+    #vid.release()
+    #cv2.destroyAllWindows()
